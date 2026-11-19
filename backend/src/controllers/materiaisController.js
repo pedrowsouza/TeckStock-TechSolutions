@@ -1,12 +1,10 @@
 
 import { getAllMateriais, getMaterialById, postMaterial, deleteMaterialService, putMaterialService, patchMaterialService } from "../services/materiaisService.js"
 
-// Validar ID
 function validarId(id) {
     return Number.isSafeInteger(id) && id > 0
 }
 
-// Validar os dados do material
 function validarMaterial(body, completo = true) {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
         return "Dados inválidos"
@@ -19,7 +17,7 @@ function validarMaterial(body, completo = true) {
     }
 
     if (completo && (!body.nome || !body.patrimonio)) {
-        return "Nome e patrimônio são obrigatórios"
+        return "Nome e Numero de serie são obrigatórios"
     }
 
     if (body.nome !== undefined &&
@@ -29,7 +27,7 @@ function validarMaterial(body, completo = true) {
 
     if (body.patrimonio !== undefined &&
         (typeof body.patrimonio !== "string" || !body.patrimonio.trim() || body.patrimonio.length > 100)) {
-        return "Patrimônio inválido"
+        return "Numero de serie invalido"
     }
 
     if (body.categoria != null &&
@@ -48,7 +46,7 @@ function validarMaterial(body, completo = true) {
     }
 
     if (completo && body.status === "Emprestado" && !body.funcionario?.trim()) {
-        return "Informe o funcionário responsável pelo empréstimo"
+        return "Informe o funcionário responsável "
     }
 
     if (completo && (body.status ?? "Disponivel") === "Disponivel" && body.funcionario?.trim()) {
@@ -58,151 +56,143 @@ function validarMaterial(body, completo = true) {
     return null
 }
 
-// Tratar erros do banco
-function tratarErro(request, reply, erro) {
+function tratarErro(request, response, erro) {
     request.log.error(erro)
 
     if (erro.code === "ER_DUP_ENTRY") {
-        return reply.code(409).send({ mensagem: "Este patrimônio já está cadastrado" })
+        return response.code(409).send({ mensagem: "Este patrimônio já está cadastrado" })
     }
 
-    return reply.code(500).send({ mensagem: "Erro interno no servidor" })
+    return response.code(500).send({ mensagem: "Erro interno no servidor" })
 }
 
-// Listar materiais
-export async function getAllMateriaisController(request, reply) {
+export async function getAllMateriaisController(request, response) {
     const page = Number(request.query.page ?? 1)
     const limit = Number(request.query.limit ?? 10)
     const { nome, categoria, status } = request.query
 
     if (!validarId(page) || !validarId(limit) || limit > 100) {
-        return reply.code(400).send({ mensagem: "Página ou limite inválido" })
+        return response.code(400).send({ mensagem: "Página ou limite inválido" })
     }
 
     if ([nome, categoria, status].some(valor => valor !== undefined && typeof valor !== "string")) {
-        return reply.code(400).send({ mensagem: "Filtro inválido" })
+        return response.code(400).send({ mensagem: "Filtro inválido" })
     }
 
     if (status && !["Disponivel", "Emprestado"].includes(status)) {
-        return reply.code(400).send({ mensagem: "Status inválido" })
+        return response.code(400).send({ mensagem: "Status inválido" })
     }
 
     try {
         return await getAllMateriais(page, limit, { nome, categoria, status })
     } catch (erro) {
-        return tratarErro(request, reply, erro)
+        return tratarErro(request, response, erro)
     }
 }
 
-// Buscar material por ID
-export async function getMaterialByIdController(request, reply) {
+export async function getMaterialByIdController(request, response) {
     const id = Number(request.params.id)
 
     if (!validarId(id)) {
-        return reply.code(400).send({ mensagem: "ID inválido" })
+        return response.code(400).send({ mensagem: "ID inválido" })
     }
 
     try {
         const material = await getMaterialById(id)
 
         if (!material) {
-            return reply.code(404).send({ mensagem: "Material não encontrado" })
+            return response.code(404).send({ mensagem: "Material não encontrado" })
         }
 
         return material
     } catch (erro) {
-        return tratarErro(request, reply, erro)
+        return tratarErro(request, response, erro)
     }
 }
 
-// Cadastrar material
-export async function postMaterialController(request, reply) {
+export async function postMaterialController(request, response) {
     const erro = validarMaterial(request.body)
 
     if (erro) {
-        return reply.code(400).send({ mensagem: erro })
+        return response.code(400).send({ mensagem: erro })
     }
 
     try {
         const material = await postMaterial(request.body)
-        return reply.code(201).send(material)
+        return response.code(201).send(material)
     } catch (erro) {
-        return tratarErro(request, reply, erro)
+        return tratarErro(request, response, erro)
     }
 }
 
-// Excluir material
-export async function deleteMaterialController(request, reply) {
+export async function deleteMaterialController(request, response) {
     const id = Number(request.params.id)
 
     if (!validarId(id)) {
-        return reply.code(400).send({ mensagem: "ID inválido" })
+        return response.code(400).send({ mensagem: "ID inválido" })
     }
 
     try {
         const excluido = await deleteMaterialService(id)
 
         if (!excluido) {
-            return reply.code(404).send({ mensagem: "Material não encontrado" })
+            return response.code(404).send({ mensagem: "Material não encontrado" })
         }
 
         return { mensagem: "Material excluído com sucesso!" }
     } catch (erro) {
-        return tratarErro(request, reply, erro)
+        return tratarErro(request, response, erro)
     }
 }
 
-// Atualizar material completo
-export async function putMaterialController(request, reply) {
+export async function putMaterialController(request, response) {
     const id = Number(request.params.id)
 
     if (!validarId(id)) {
-        return reply.code(400).send({ mensagem: "ID inválido" })
+        return response.code(400).send({ mensagem: "ID inválido" })
     }
 
     const erro = validarMaterial(request.body)
 
     if (erro) {
-        return reply.code(400).send({ mensagem: erro })
+        return response.code(400).send({ mensagem: erro })
     }
 
     try {
         const atualizado = await putMaterialService(id, request.body)
 
         if (!atualizado) {
-            return reply.code(404).send({ mensagem: "Material não encontrado" })
+            return response.code(404).send({ mensagem: "Material não encontrado" })
         }
 
         return await getMaterialById(id)
     } catch (erro) {
-        return tratarErro(request, reply, erro)
+        return tratarErro(request, response, erro)
     }
 }
 
-// Atualizar parcialmente
-export async function patchMaterialController(request, reply) {
+export async function patchMaterialController(request, response) {
     const id = Number(request.params.id)
 
     if (!validarId(id)) {
-        return reply.code(400).send({ mensagem: "ID inválido" })
+        return response.code(400).send({ mensagem: "ID inválido" })
     }
 
     const erro = validarMaterial(request.body, false)
 
     if (erro) {
-        return reply.code(400).send({ mensagem: erro })
+        return response.code(400).send({ mensagem: erro })
     }
 
     try {
         const material = await getMaterialById(id)
 
         if (!material) {
-            return reply.code(404).send({ mensagem: "Material não encontrado" })
+            return response.code(404).send({ mensagem: "Material não encontrado" })
         }
 
         const atualizado = { ...material, ...request.body }
 
-        // Validar a situação final do material
         const erroFinal = validarMaterial({
             nome: atualizado.nome,
             categoria: atualizado.categoria,
@@ -212,13 +202,13 @@ export async function patchMaterialController(request, reply) {
         })
 
         if (erroFinal) {
-            return reply.code(400).send({ mensagem: erroFinal })
+            return response.code(400).send({ mensagem: erroFinal })
         }
 
         await patchMaterialService(id, request.body)
 
         return await getMaterialById(id)
     } catch (erro) {
-        return tratarErro(request, reply, erro)
+        return tratarErro(request, response, erro)
     }
 }

@@ -1,6 +1,5 @@
 import { db } from "../config_db/connection.js"
 
-// Listar materiais com filtros e paginação
 export async function getAllMateriais(page = 1, limit = 10, filtros = {}) {
     const { nome, categoria, status } = filtros
     const offset = (page - 1) * limit
@@ -43,7 +42,6 @@ export async function getAllMateriais(page = 1, limit = 10, filtros = {}) {
     }
 }
 
-// Buscar material por ID
 export async function getMaterialById(id) {
     const [materiais] = await db.query(
         "SELECT * FROM materiais WHERE id = ?",
@@ -53,7 +51,6 @@ export async function getMaterialById(id) {
     return materiais[0] ?? null
 }
 
-// Cadastrar material
 export async function postMaterial(body) {
     const { nome, categoria = null, patrimonio, status = "Disponivel", funcionario = null } = body
 
@@ -65,7 +62,6 @@ export async function postMaterial(body) {
     return getMaterialById(resultado.insertId)
 }
 
-// Excluir material
 export async function deleteMaterialService(id) {
     const [resultado] = await db.query(
         "DELETE FROM materiais WHERE id = ?",
@@ -75,7 +71,6 @@ export async function deleteMaterialService(id) {
     return resultado.affectedRows > 0
 }
 
-// Atualizar material completo
 export async function putMaterialService(id, body) {
     const { nome, categoria = null, patrimonio, status = "Disponivel", funcionario = null } = body
 
@@ -87,7 +82,6 @@ export async function putMaterialService(id, body) {
     return resultado.affectedRows > 0
 }
 
-// Atualizar parcialmente
 export async function patchMaterialService(id, body) {
     const material = await getMaterialById(id)
 

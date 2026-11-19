@@ -6,7 +6,6 @@ const API = "/api/materiais"
 const formulario = document.getElementById("formMaterial")
 const tabela = document.getElementById("tabelaMateriais")
 const botaoSalvar = formulario.querySelector("button[type='submit']")
-
 const anterior = document.getElementById("anterior")
 const proxima = document.getElementById("proxima")
 const infoPagina = document.getElementById("infoPagina")
@@ -15,17 +14,13 @@ let paginaAtual = 1
 let totalPaginas = 1
 let idEdicao = null
 
-// Listar materiais
 async function listarMateriais() {
     try {
         const resposta = await fetch(`${API}?page=${paginaAtual}&limit=5`)
 
-        if (!resposta.ok) {
-            throw new Error("Erro ao buscar materiais")
-        }
+        if (!resposta.ok) throw new Error("Erro ao buscar materiais")
 
         const dados = await resposta.json()
-
         totalPaginas = Math.max(1, Number(dados.totalPaginas) || 1)
 
         if (paginaAtual > totalPaginas) {
@@ -37,7 +32,6 @@ async function listarMateriais() {
 
         dados.materiais.forEach(material => {
             const linha = document.createElement("tr")
-
             const campos = [
                 material.nome,
                 material.categoria,
@@ -65,12 +59,11 @@ async function listarMateriais() {
             excluir.addEventListener("click", () => excluirMaterial(material.id))
 
             acoes.append(editar, excluir)
-            linha.appendChild(acoes)
+            linha.append(acoes)
             tabela.appendChild(linha)
         })
 
         infoPagina.textContent = `Página ${paginaAtual} de ${totalPaginas}`
-
         anterior.disabled = paginaAtual === 1
         proxima.disabled = paginaAtual === totalPaginas
 
@@ -80,14 +73,11 @@ async function listarMateriais() {
     }
 }
 
-// Atualizar indicadores
 async function atualizarIndicadores() {
     try {
-        const resposta = await fetch(`${API}?limit=100`)
+        const resposta = await fetch(`${API}?page=1&limit=100`)
 
-        if (!resposta.ok) {
-            throw new Error("Erro ao buscar indicadores")
-        }
+        if (!resposta.ok) throw new Error("Erro ao buscar indicadores")
 
         const dados = await resposta.json()
 
@@ -104,7 +94,6 @@ async function atualizarIndicadores() {
     }
 }
 
-// Cadastrar ou atualizar material
 async function salvarMaterial(evento) {
     evento.preventDefault()
 
@@ -116,28 +105,22 @@ async function salvarMaterial(evento) {
         funcionario: document.getElementById("funcionario").value.trim() || null
     }
 
-    // Validar funcionário responsável
     if (material.status === "Emprestado" && !material.funcionario) {
         alert("Informe o funcionário responsável pelo empréstimo")
         document.getElementById("funcionario").focus()
         return
     }
 
-    // Material disponível não possui responsável
     if (material.status === "Disponivel") {
         material.funcionario = null
     }
 
     const editando = idEdicao !== null
-    const endereco = editando ? `${API}/${idEdicao}` : API
-    const metodo = editando ? "PUT" : "POST"
 
     try {
-        const resposta = await fetch(endereco, {
-            method: metodo,
-            headers: {
-                "Content-Type": "application/json"
-            },
+        const resposta = await fetch(editando ? `${API}/${idEdicao}` : API, {
+            method: editando ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(material)
         })
 
@@ -154,9 +137,7 @@ async function salvarMaterial(evento) {
         idEdicao = null
         botaoSalvar.textContent = "Cadastrar material"
 
-        if (!editando) {
-            paginaAtual = 1
-        }
+        if (!editando) paginaAtual = 1
 
         await listarMateriais()
         await atualizarIndicadores()
@@ -167,7 +148,6 @@ async function salvarMaterial(evento) {
     }
 }
 
-// Editar material
 function editarMaterial(material) {
     idEdicao = material.id
 
@@ -178,15 +158,11 @@ function editarMaterial(material) {
     document.getElementById("funcionario").value = material.funcionario ?? ""
 
     botaoSalvar.textContent = "Salvar alterações"
-
     formulario.scrollIntoView({ behavior: "smooth" })
 }
 
-// Excluir material
 async function excluirMaterial(id) {
-    if (!confirm("Deseja realmente excluir este material?")) {
-        return
-    }
+    if (!confirm("Deseja realmente excluir este material?")) return
 
     try {
         const resposta = await fetch(`${API}/${id}`, {
@@ -216,7 +192,6 @@ async function excluirMaterial(id) {
     }
 }
 
-// Página anterior
 anterior.addEventListener("click", () => {
     if (paginaAtual > 1) {
         paginaAtual--
@@ -224,7 +199,6 @@ anterior.addEventListener("click", () => {
     }
 })
 
-// Próxima página
 proxima.addEventListener("click", () => {
     if (paginaAtual < totalPaginas) {
         paginaAtual++
@@ -232,7 +206,6 @@ proxima.addEventListener("click", () => {
     }
 })
 
-// Iniciar sistema
 formulario.addEventListener("submit", salvarMaterial)
 
 listarMateriais()
