@@ -56,7 +56,7 @@ Criado para realizar o backup do Banco de dados
 
 # TechSolutions — Backup do Banco de Dados
 
-Deixei o backup do MySQL na pasta `database/backups` do projeto no GitHub. Para restaurar na sua máquina, é necessário ter o Git e o Docker Desktop instalados.
+Deixei o backup do MySQL na pasta `database/backups` do projeto no GitHub. Para  máquina, é necessário ter o Git e o Docker Desktop instalados.
 
 **1. Baixar o projeto:**
 ```powershell
