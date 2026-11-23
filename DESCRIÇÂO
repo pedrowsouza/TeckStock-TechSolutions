@@ -1,4 +1,4 @@
-#### INiciar o servidor backend ####### node src/server.js
+#### INiciar o servidor backend ####### node src/server.js ou npm run dev
 
 #### Iniciar o servidor frondend ##### npm run dev
 
