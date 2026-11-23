@@ -60,7 +60,6 @@ Criado para realizar o backup do Banco de dados
 
 powershell
 docker exec mysql-techstock mysqldump -uroot -proot techsolutions > .\backups\techsolutions_backup.sql
-Use o código com cuidado.
 
 2. Na nova máquina (dentro da pasta database)
 
