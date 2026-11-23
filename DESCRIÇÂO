@@ -67,16 +67,11 @@ Use o código com cuidado.
 powershell
 docker run --name mysql-techstock -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=techsolutions -p 3306:3306 -d mysql:8.0
 
-Use o código com cuidado.
-(Aguarde 20 segundos)
-
 powershell
 Get-Content .\backups\techsolutions_backup.sql | docker exec -i mysql-techstock mysql -uroot -proot techsolutions
-Use o código com cuidado.
 
 powershell
 Set-Content -Path ..\backend\.env -Value "DB_HOST=127.0.0.1`nDB_PORT=3306`nDB_USER=root`nDB_PASSWORD=root`nDB_NAME=techsolutions"
-
 
 3. Iniciar Backend (Terminal 1)
 
@@ -84,7 +79,6 @@ powershell
 cd ..\backend
 npm install
 node src/server.js
-Use o código com cuidado.
 
 4. Iniciar Frontend (Terminal 2)
 
