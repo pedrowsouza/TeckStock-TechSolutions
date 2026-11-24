@@ -1,212 +1,177 @@
-
 import "./style.css"
 
 const API = "/api/materiais"
-
-const formulario = document.getElementById("formMaterial")
 const tabela = document.getElementById("tabelaMateriais")
-const botaoSalvar = formulario.querySelector("button[type='submit']")
-const anterior = document.getElementById("anterior")
-const proxima = document.getElementById("proxima")
-const infoPagina = document.getElementById("infoPagina")
+const formulario = document.getElementById("formMaterial")
+
+const nome = document.getElementById("nome")
+const categoria = document.getElementById("categoria")
+const patrimonio = document.getElementById("patrimonio")
+const status = document.getElementById("status")
+const funcionario = document.getElementById("funcionario")
 
 let paginaAtual = 1
 let totalPaginas = 1
 let idEdicao = null
 
-async function listarMateriais() {
-    try {
-        const resposta = await fetch(`${API}?page=${paginaAtual}&limit=5`)
-
-        if (!resposta.ok) throw new Error("Erro ao buscar materiais")
-
-        const dados = await resposta.json()
-        totalPaginas = Math.max(1, Number(dados.totalPaginas) || 1)
-
-        if (paginaAtual > totalPaginas) {
-            paginaAtual = totalPaginas
-            return listarMateriais()
-        }
-
-        tabela.innerHTML = ""
-
-        dados.materiais.forEach(material => {
-            const linha = document.createElement("tr")
-            const campos = [
-                material.nome,
-                material.categoria,
-                material.patrimonio,
-                material.status,
-                material.funcionario
-            ]
-
-            campos.forEach(valor => {
-                const coluna = document.createElement("td")
-                coluna.textContent = valor ?? "-"
-                linha.appendChild(coluna)
-            })
-
-            const acoes = document.createElement("td")
-
-            const editar = document.createElement("button")
-            editar.textContent = "Editar"
-            editar.className = "btn-editar"
-            editar.addEventListener("click", () => editarMaterial(material))
-
-            const excluir = document.createElement("button")
-            excluir.textContent = "Excluir"
-            excluir.className = "btn-excluir"
-            excluir.addEventListener("click", () => excluirMaterial(material.id))
-
-            acoes.append(editar, excluir)
-            linha.append(acoes)
-            tabela.appendChild(linha)
-        })
-
-        infoPagina.textContent = `Página ${paginaAtual} de ${totalPaginas}`
-        anterior.disabled = paginaAtual === 1
-        proxima.disabled = paginaAtual === totalPaginas
-
-    } catch (erro) {
-        console.error(erro)
-        alert("Erro ao carregar materiais")
-    }
-}
-
-async function atualizarIndicadores() {
-    try {
-        const resposta = await fetch(`${API}?page=1&limit=100`)
-
-        if (!resposta.ok) throw new Error("Erro ao buscar indicadores")
-
-        const dados = await resposta.json()
-
-        document.getElementById("total").textContent = dados.totalRegistros
-
-        document.getElementById("disponiveis").textContent =
-            dados.materiais.filter(material => material.status === "Disponivel").length
-
-        document.getElementById("emprestados").textContent =
-            dados.materiais.filter(material => material.status === "Emprestado").length
-
-    } catch (erro) {
-        console.error(erro)
-    }
-}
-
-async function salvarMaterial(evento) {
-    evento.preventDefault()
+formulario.addEventListener("submit", async (event) => {
+    event.preventDefault()
 
     const material = {
-        nome: document.getElementById("nome").value.trim(),
-        categoria: document.getElementById("categoria").value.trim(),
-        patrimonio: document.getElementById("patrimonio").value.trim(),
-        status: document.getElementById("status").value,
-        funcionario: document.getElementById("funcionario").value.trim() || null
+        nome: nome.value.trim(),
+        categoria: categoria.value.trim(),
+        patrimonio: patrimonio.value.trim(),
+        status: status.value,
+        funcionario: funcionario.value.trim()
     }
 
     if (material.status === "Emprestado" && !material.funcionario) {
-        alert("Informe o funcionário responsável pelo empréstimo")
-        document.getElementById("funcionario").focus()
-        return
+        return alert("Informe o funcionário")
     }
 
     if (material.status === "Disponivel") {
         material.funcionario = null
     }
 
-    const editando = idEdicao !== null
+    let res
 
-    try {
-        const resposta = await fetch(editando ? `${API}/${idEdicao}` : API, {
-            method: editando ? "PUT" : "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(material)
-        })
+    if (idEdicao === null) {
+        res = await postMaterial(material)
+    } else {
+        res = await putMaterial(idEdicao, material)
+    }
 
-        const resultado = await resposta.json()
+    if (!res.ok) return alert("Erro ao salvar material")
 
-        if (!resposta.ok) {
-            alert(resultado.mensagem || "Erro ao salvar material")
-            return
-        }
+    formulario.reset()
+    idEdicao = null
+    formulario.querySelector("button").textContent = "Cadastrar material"
 
-        alert(editando ? "Material atualizado!" : "Material cadastrado!")
+    getMateriais()
+    atualizarIndicadores()
+})
 
+async function getMateriais() {
+    const res = await fetch(`${API}?page=${paginaAtual}&limit=5`)
+    const data = await res.json()
+
+    if (!res.ok) return alert("Erro ao buscar materiais")
+
+    totalPaginas = Math.max(1, data.totalPaginas)
+
+    if (paginaAtual > totalPaginas) {
+        paginaAtual = totalPaginas
+        return getMateriais()
+    }
+
+    tabela.innerHTML = ""
+
+    for (let i = 0; i < data.materiais.length; i++) {
+        const material = data.materiais[i]
+        const linha = tabela.insertRow()
+
+        linha.insertCell().textContent = material.nome
+        linha.insertCell().textContent = material.categoria || "-"
+        linha.insertCell().textContent = material.patrimonio
+        linha.insertCell().textContent = material.status
+        linha.insertCell().textContent = material.funcionario || "-"
+
+        const acoes = linha.insertCell()
+
+        acoes.innerHTML = `
+            <button class="btn-editar">Editar</button>
+            <button class="btn-excluir">Excluir</button>
+        `
+
+        acoes.children[0].onclick = () => editarMaterial(material)
+        acoes.children[1].onclick = () => deleteMaterial(material.id)
+    }
+
+    document.getElementById("infoPagina").textContent =
+        `Página ${paginaAtual} de ${totalPaginas}`
+
+    document.getElementById("anterior").disabled = paginaAtual === 1
+    document.getElementById("proxima").disabled = paginaAtual === totalPaginas
+}
+
+async function postMaterial(material) {
+    const res = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(material)
+    })
+
+    return res
+}
+
+async function putMaterial(id, material) {
+    const res = await fetch(API + "/" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(material)
+    })
+
+    return res
+}
+
+async function deleteMaterial(id) {
+    if (!confirm("Deseja excluir o material?")) return
+
+    const res = await fetch(API + "/" + id, {
+        method: "DELETE"
+    })
+
+    if (!res.ok) return alert("Erro ao excluir")
+
+    if (idEdicao === id) {
         formulario.reset()
         idEdicao = null
-        botaoSalvar.textContent = "Cadastrar material"
-
-        if (!editando) paginaAtual = 1
-
-        await listarMateriais()
-        await atualizarIndicadores()
-
-    } catch (erro) {
-        console.error(erro)
-        alert("Erro ao conectar com o servidor")
+        formulario.querySelector("button").textContent = "Cadastrar material"
     }
+
+    getMateriais()
+    atualizarIndicadores()
 }
 
 function editarMaterial(material) {
     idEdicao = material.id
 
-    document.getElementById("nome").value = material.nome
-    document.getElementById("categoria").value = material.categoria ?? ""
-    document.getElementById("patrimonio").value = material.patrimonio
-    document.getElementById("status").value = material.status
-    document.getElementById("funcionario").value = material.funcionario ?? ""
+    nome.value = material.nome
+    categoria.value = material.categoria || ""
+    patrimonio.value = material.patrimonio
+    status.value = material.status
+    funcionario.value = material.funcionario || ""
 
-    botaoSalvar.textContent = "Salvar alterações"
-    formulario.scrollIntoView({ behavior: "smooth" })
+    formulario.querySelector("button").textContent = "Salvar alterações"
 }
 
-async function excluirMaterial(id) {
-    if (!confirm("Deseja realmente excluir este material?")) return
+async function atualizarIndicadores() {
+    const res = await fetch(API + "?page=1&limit=100")
+    const data = await res.json()
 
-    try {
-        const resposta = await fetch(`${API}/${id}`, {
-            method: "DELETE"
-        })
+    if (!res.ok) return
 
-        if (!resposta.ok) {
-            const erro = await resposta.json()
-            alert(erro.mensagem || "Erro ao excluir material")
-            return
-        }
+    document.getElementById("total").textContent = data.totalRegistros
+    document.getElementById("disponiveis").textContent =
+        data.materiais.filter(m => m.status === "Disponivel").length
 
-        if (idEdicao === id) {
-            idEdicao = null
-            formulario.reset()
-            botaoSalvar.textContent = "Cadastrar material"
-        }
-
-        alert("Material excluído com sucesso!")
-
-        await listarMateriais()
-        await atualizarIndicadores()
-
-    } catch (erro) {
-        console.error(erro)
-        alert("Erro ao conectar com o servidor")
-    }
+    document.getElementById("emprestados").textContent =
+        data.materiais.filter(m => m.status === "Emprestado").length
 }
 
-anterior.addEventListener("click", () => {
+document.getElementById("anterior").onclick = () => {
     if (paginaAtual > 1) {
         paginaAtual--
-        listarMateriais()
+        getMateriais()
     }
-})
+}
 
-proxima.addEventListener("click", () => {
+document.getElementById("proxima").onclick = () => {
     if (paginaAtual < totalPaginas) {
         paginaAtual++
-        listarMateriais()
+        getMateriais()
     }
-})
+}
 
-formulario.addEventListener("submit", salvarMaterial)
-
-listarMateriais()
+getMateriais()
 atualizarIndicadores()
