@@ -9,15 +9,9 @@ export async function getAllMateriais(page = 1, limit = 10) {
         [limit, offset]
     )
 
-    const [[{ total }]] = await db.query("SELECT COUNT(*) AS total FROM materiais")
+    const total = await db.query("SELECT COUNT(*) AS total FROM materiais")
 
-    return {
-        paginaAtual: page,
-        limite: limit,
-        totalRegistros: total,
-        totalPaginas: Math.ceil(total / limit),
-        materiais
-    }
+    return { paginaAtual: page, limite: limit, totalRegistros: total, totalPaginas: Math.ceil(total / limit), materiais }
 }
 
 // Busca um material pelo ID.
