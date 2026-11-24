@@ -56,32 +56,73 @@ Criado para realizar o backup do Banco de dados
 
 # TechSolutions — Backup do Banco de Dados
 
-1. Na máquina atual 
+1. Executar o init.sql no MySQL Workbench.
 
-powershell
-docker exec mysql-techstock mysqldump -uroot -proot techsolutions > .\backups\techsolutions_backup.sql
+Isso criará automaticamente o banco de dados, a tabela e os cinco materiais de exemplo.
 
-2. Na nova máquina (dentro da pasta database)
+2. Configurar o arquivo backend/.env com as informações do MySQL dele.
+PORT=3000
 
-powershell
-docker run --name mysql-techstock -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=techsolutions -p 3306:3306 -d mysql:8.0
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=SENHA_DO_PROFESSOR
+DB_NAME=techsolutions
 
-powershell
-Get-Content .\backups\techsolutions_backup.sql | docker exec -i mysql-techstock mysql -uroot -proot techsolutions
 
-powershell
-Set-Content -Path ..\backend\.env -Value "DB_HOST=127.0.0.1`nDB_PORT=3306`nDB_USER=root`nDB_PASSWORD=root`nDB_NAME=techsolutions"
+- DB_PORT: porta do MySQL da máquina dele.
+- DB_PASSWORD: senha do MySQL dele.
+- DB_USER: usuário do MySQL dele, caso seja diferente de root.
 
-3. Iniciar Backend (Terminal 1)
 
-powershell
-cd ..\backend
-npm install
+****OU****
+
+Passo a passo – Instalação do TechSolutions pelo VS Code
+
+1. Baixar o projeto
+
+git clone https://github.com/pedrowsouza/TeckStock-TechSolutions.git
+cd TeckStock-TechSolutions
+code .
+
+2. Criar o banco de dados
+
+Abrir o terminal do VS Code na pasta principal do projeto e executar:
+
+mysql -h 127.0.0.1 -u root -p -P 3306 -e "source database/backups/init.sql"
+
+Informar a senha do MySQL da máquina.
+
+Caso o comando mysql não seja reconhecido, executar:
+
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -h 127.0.0.1 -u root -p -P 3306 -e "source database/backups/init.sql"
+
+O banco de dados, a tabela e os cinco materiais de exemplo serão criados automaticamente.
+
+3. Configurar o arquivo backend/.env
+
+PORT=3000
+
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=SENHA_DO_MYSQL
+DB_NAME=techsolutions
+
+Alterar a porta, o usuário e a senha conforme as configurações do MySQL da máquina.
+
+4. Inicializar o backend
+
+cd backend
+npm.cmd install
 node src/server.js
 
-4. Iniciar Frontend (Terminal 2)
+Manter o terminal aberto.
 
-powershell
-cd ..\frontend
-npm install
-npm run dev
+5. Inicializar o frontend
+
+Abrir um novo terminal na pasta principal do projeto e executar:
+
+cd frontend
+npm.cmd install
+npm.cmd run dev
