@@ -1,37 +1,15 @@
 import { db } from "../config_db/connection.js"
 
-export async function getAllMateriais(page = 1, limit = 10, filtros = {}) {
-    const { nome, categoria, status } = filtros
+// Lista os materiais com paginação.
+export async function getAllMateriais(page = 1, limit = 10) {
     const offset = (page - 1) * limit
 
-    let sql = "SELECT * FROM materiais WHERE 1=1"
-    let countSql = "SELECT COUNT(*) AS total FROM materiais WHERE 1=1"
-    const valores = []
-
-    if (nome) {
-        sql += " AND nome LIKE ?"
-        countSql += " AND nome LIKE ?"
-        valores.push(`%${nome}%`)
-    }
-
-    if (categoria) {
-        sql += " AND categoria LIKE ?"
-        countSql += " AND categoria LIKE ?"
-        valores.push(`%${categoria}%`)
-    }
-
-    if (status) {
-        sql += " AND status = ?"
-        countSql += " AND status = ?"
-        valores.push(status)
-    }
-
     const [materiais] = await db.query(
-        sql + " ORDER BY id ASC LIMIT ? OFFSET ?",
-        [...valores, limit, offset]
+        "SELECT * FROM materiais ORDER BY id ASC LIMIT ? OFFSET ?",
+        [limit, offset]
     )
 
-    const [[{ total }]] = await db.query(countSql, valores)
+    const [[{ total }]] = await db.query("SELECT COUNT(*) AS total FROM materiais")
 
     return {
         paginaAtual: page,
@@ -42,15 +20,14 @@ export async function getAllMateriais(page = 1, limit = 10, filtros = {}) {
     }
 }
 
+// Busca um material pelo ID.
 export async function getMaterialById(id) {
-    const [materiais] = await db.query(
-        "SELECT * FROM materiais WHERE id = ?",
-        [id]
-    )
+    const [materiais] = await db.query("SELECT * FROM materiais WHERE id = ?", [id])
 
     return materiais[0] ?? null
 }
 
+// Cadastra um novo material.
 export async function postMaterial(body) {
     const { nome, categoria = null, patrimonio, status = "Disponivel", funcionario = null } = body
 
@@ -62,15 +39,14 @@ export async function postMaterial(body) {
     return getMaterialById(resultado.insertId)
 }
 
+// Exclui um material pelo ID.
 export async function deleteMaterialService(id) {
-    const [resultado] = await db.query(
-        "DELETE FROM materiais WHERE id = ?",
-        [id]
-    )
+    const [resultado] = await db.query("DELETE FROM materiais WHERE id = ?", [id])
 
     return resultado.affectedRows > 0
 }
 
+// Atualiza completamente um material.
 export async function putMaterialService(id, body) {
     const { nome, categoria = null, patrimonio, status = "Disponivel", funcionario = null } = body
 
@@ -79,13 +55,18 @@ export async function putMaterialService(id, body) {
         [nome, categoria, patrimonio, status, funcionario, id]
     )
 
-    return resultado.affectedRows > 0
+    if (!resultado.affectedRows)
+        return "Material não encontrado"
+
+    return "Material atualizado com sucesso!"
 }
 
+// Atualiza parcialmente um material.
 export async function patchMaterialService(id, body) {
     const material = await getMaterialById(id)
 
-    if (!material) return false
+    if (!material)
+        return "Material não encontrado"
 
     const atualizado = { ...material, ...body }
 
