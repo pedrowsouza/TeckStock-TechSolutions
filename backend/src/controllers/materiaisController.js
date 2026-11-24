@@ -1,6 +1,5 @@
 import { getAllMateriais, getMaterialById, postMaterial, deleteMaterialService, putMaterialService, patchMaterialService } from "../services/materiaisService.js"
 
-// Valida as informações do material.
 function validarMaterial(body) {
     if (!body.nome?.trim() || !body.patrimonio?.trim())
         return "Nome e número de série são obrigatórios"
@@ -17,14 +16,12 @@ function validarMaterial(body) {
     return null
 }
 
-// Lista os materiais com paginação.
 export async function getAllMateriaisController(request, response) {
     const materiais = await getAllMateriais(Number(request.query.page ?? 1))
 
     return response.code(200).send(materiais)
 }
 
-// Busca um material pelo ID.
 export async function getMaterialByIdController(request, response) {
     const material = await getMaterialById(request.params.id)
 
@@ -34,7 +31,6 @@ export async function getMaterialByIdController(request, response) {
     return response.code(200).send(material)
 }
 
-// Cadastra um novo material.
 export async function postMaterialController(request, response) {
     const erro = validarMaterial(request.body)
 
@@ -46,7 +42,6 @@ export async function postMaterialController(request, response) {
     return response.code(201).send(material)
 }
 
-// Exclui um material pelo ID.
 export async function deleteMaterialController(request, response) {
     const excluido = await deleteMaterialService(request.params.id)
 
@@ -56,14 +51,12 @@ export async function deleteMaterialController(request, response) {
     return response.code(200).send({ mensagem: "Material excluído com sucesso!" })
 }
 
-// Atualiza completamente um material.
 export async function putMaterialController(request, response) {
     const mensagem = await putMaterialService(request.params.id, request.body)
 
     response.code(200).send({ mensagem: mensagem })
 }
 
-// Atualiza parcialmente um material.
 export async function patchMaterialController(request, response) {
     const mensagem = await patchMaterialService(request.params.id, request.body)
 
