@@ -3,7 +3,6 @@ import "./style.css"
 const API = "/api/materiais"
 const tabela = document.getElementById("tabelaMateriais")
 const formulario = document.getElementById("formMaterial")
-
 const nome = document.getElementById("nome")
 const categoria = document.getElementById("categoria")
 const patrimonio = document.getElementById("patrimonio")
